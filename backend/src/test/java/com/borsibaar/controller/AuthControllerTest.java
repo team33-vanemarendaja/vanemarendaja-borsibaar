@@ -1,5 +1,6 @@
 package com.borsibaar.controller;
 
+import com.borsibaar.dto.AuthResultDto;
 import com.borsibaar.dto.UserDTO;
 import com.borsibaar.service.AuthService;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class AuthControllerTest {
     void loginSuccess_SetsCookie_AndRedirectsToOnboarding() throws Exception {
         // Arrange
         UserDTO dto = new UserDTO("user@test.com", "User", "token-123", null);
-        AuthService.AuthResult result = new AuthService.AuthResult(dto, true);
+        AuthResultDto result = new AuthResultDto(dto, true);
         when(authService.processOAuthLogin(any(OAuth2AuthenticationToken.class))).thenReturn(result);
 
         DefaultOAuth2User oAuth2User = new DefaultOAuth2User(

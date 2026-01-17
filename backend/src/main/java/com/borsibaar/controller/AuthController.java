@@ -1,10 +1,12 @@
 package com.borsibaar.controller;
 
+import com.borsibaar.dto.LogoutResponseDto;
 import com.borsibaar.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,14 +17,12 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
 
     @GetMapping("/login/success")
     public void success(HttpServletResponse response, OAuth2AuthenticationToken auth) throws IOException {
@@ -58,9 +58,8 @@ public class AuthController {
         jwtCookie.setMaxAge(0); // Expire immediately
         response.addCookie(jwtCookie);
 
-        return ResponseEntity.ok().body(new LogoutResponse("Logged out successfully"));
+        return ResponseEntity.ok().body(new LogoutResponseDto("Logged out successfully"));
     }
 
-    private record LogoutResponse(String message) {
-    }
+
 }
