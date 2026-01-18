@@ -31,24 +31,19 @@ public class BarStationService {
 
     @Transactional(readOnly = true)
     public List<BarStationResponseDto> getAllStations(Long organizationId) {
-        List<BarStation> stations = barStationRepository.findByOrganizationId(organizationId);
-        return barStationMapper.toResponseDtoList(stations);
+        return barStationMapper.toResponseDtoList(barStationRepository.findByOrganizationId(organizationId));
     }
 
     @Transactional(readOnly = true)
     public BarStationResponseDto getStationById(Long organizationId, Long stationId) {
-        BarStation station = barStationRepository.findByOrganizationIdAndId(organizationId, stationId)
+        return barStationRepository.findByOrganizationIdAndId(organizationId, stationId)
+                .map(barStationMapper::toResponseDto)
                 .orElseThrow(() -> new NotFoundException("Bar station not found"));
-        return barStationMapper.toResponseDto(station);
     }
 
     @Transactional
     public BarStationResponseDto createStation(Long organizationId, BarStationRequestDto request) {
-        // Check for duplicate name
-        List<BarStation> existingStations = barStationRepository.findByOrganizationId(organizationId);
-        boolean nameExists = existingStations.stream()
-                .anyMatch(s -> s.getName().equalsIgnoreCase(request.name()));
-        if (nameExists) {
+        if (barStationRepository.existsByOrganizationIdAndNameIgnoreCase(organizationId, request.name())) {
             throw new DuplicateResourceException("A bar station with this name already exists");
         }
 
@@ -65,8 +60,7 @@ public class BarStationService {
             station.setUsers(users);
         }
 
-        BarStation savedStation = barStationRepository.save(station);
-        return barStationMapper.toResponseDto(savedStation);
+        return barStationMapper.toResponseDto(barStationRepository.save(station));
     }
 
     @Transactional
@@ -75,11 +69,8 @@ public class BarStationService {
                 .orElseThrow(() -> new NotFoundException("Bar station not found"));
 
         // Check for duplicate name (excluding current station)
-        List<BarStation> existingStations = barStationRepository.findByOrganizationId(organizationId);
-        boolean nameExists = existingStations.stream()
-                .anyMatch(s -> !s.getId().equals(stationId) && s.getName().equalsIgnoreCase(request.name()));
-        if (nameExists) {
-            throw new DuplicateResourceException("A bar station with this name already exists");
+        if (barStationRepository.existsByOrganizationIdAndNameIgnoreCaseAndIdNot(organizationId, request.name(), stationId)) {
+            throw new DuplicateResourceException("Another station already uses this name");
         }
 
         station.setName(request.name());
@@ -116,15 +107,10 @@ public class BarStationService {
 
     @Transactional(readOnly = true)
     public List<BarStationResponseDto> getUserStations(UUID userId, Long organizationId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = userRepository.findByIdAndOrganizationId(userId, organizationId)
+                .orElseThrow(() -> new NotFoundException("User not found or access denied"));
 
-        if (!user.getOrganizationId().equals(organizationId)) {
-            throw new BadRequestException("User does not belong to this organization");
-        }
-
-        List<BarStation> userStations = user.getBarStations().stream().toList();
-        return barStationMapper.toResponseDtoList(userStations);
+        return barStationMapper.toResponseDtoList(user.getBarStations().stream().toList());
     }
 
     private Set<User> assignUsersToStation(Long organizationId, List<UUID> userIds, BarStation station) {

@@ -10,9 +10,8 @@ import java.util.Optional;
 @Repository
 public interface BarStationRepository extends JpaRepository<BarStation, Long> {
     List<BarStation> findByOrganizationId(Long organizationId);
-    
     Optional<BarStation> findByOrganizationIdAndId(Long organizationId, Long id);
-    
-    List<BarStation> findByOrganizationIdAndIsActiveTrue(Long organizationId);
-}
+
+    boolean existsByOrganizationIdAndNameIgnoreCase(Long organizationId, String name);
+    boolean existsByOrganizationIdAndNameIgnoreCaseAndIdNot(Long organizationId, String name, Long id);}
 
