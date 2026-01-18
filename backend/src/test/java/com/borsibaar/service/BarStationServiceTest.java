@@ -35,7 +35,7 @@ class BarStationServiceTest {
     void createStation_Success_AssignsUsers() {
         UUID uId = UUID.randomUUID();
         BarStationRequestDto request = new BarStationRequestDto("Main", "Desc", true, List.of(uId));
-        when(barStationRepository.findByOrganizationId(1L)).thenReturn(List.of());
+        lenient().when(barStationRepository.findByOrganizationId(1L)).thenReturn(List.of());
         User user = new User(); user.setId(uId); user.setOrganizationId(1L); user.setBarStations(new HashSet<>()); user.setName("User");
         when(userRepository.findById(uId)).thenReturn(Optional.of(user));
         BarStation saved = BarStation.builder().id(5L).name("Main").organizationId(1L).users(new HashSet<>()).build();
@@ -50,7 +50,7 @@ class BarStationServiceTest {
     @Test
     void createStation_DuplicateName_Throws() {
         BarStation existing = BarStation.builder().id(1L).name("Main").organizationId(1L).build();
-        when(barStationRepository.findByOrganizationId(1L)).thenReturn(List.of(existing));
+        when(barStationRepository.existsByOrganizationIdAndNameIgnoreCase(1L, "Main")).thenReturn(true);
         BarStationRequestDto request = new BarStationRequestDto("Main", null, null, null);
         assertThrows(DuplicateResourceException.class, () -> barStationService.createStation(1L, request));
     }
@@ -60,7 +60,7 @@ class BarStationServiceTest {
         BarStation station = BarStation.builder().id(2L).name("StationA").organizationId(1L).users(new HashSet<>()).build();
         BarStation other = BarStation.builder().id(3L).name("Main").organizationId(1L).build();
         when(barStationRepository.findByOrganizationIdAndId(1L, 2L)).thenReturn(Optional.of(station));
-        when(barStationRepository.findByOrganizationId(1L)).thenReturn(List.of(station, other));
+        when(barStationRepository.existsByOrganizationIdAndNameIgnoreCaseAndIdNot(1L, "Main", 2L)).thenReturn(true);
         BarStationRequestDto request = new BarStationRequestDto("Main", null, null, null);
         assertThrows(DuplicateResourceException.class, () -> barStationService.updateStation(1L, 2L, request));
     }
@@ -73,10 +73,16 @@ class BarStationServiceTest {
 
     @Test
     void getUserStations_UserOrgMismatch_Throws() {
+        // Arrange
         UUID uid = UUID.randomUUID();
-        User user = new User(); user.setId(uid); user.setOrganizationId(2L); user.setBarStations(new HashSet<>());
-        when(userRepository.findById(uid)).thenReturn(Optional.of(user));
-        assertThrows(BadRequestException.class, () -> barStationService.getUserStations(uid, 1L));
+        Long mismatchedOrgId = 1L;
+
+        when(userRepository.findByIdAndOrganizationId(uid, mismatchedOrgId))
+                .thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NotFoundException.class, () ->
+                barStationService.getUserStations(uid, mismatchedOrgId));
     }
 
     @Test
@@ -102,7 +108,7 @@ class BarStationServiceTest {
 
     @Test
     void createStation_DefaultsActive_WhenNoUsersProvided() {
-        when(barStationRepository.findByOrganizationId(1L)).thenReturn(List.of());
+        lenient().when(barStationRepository.findByOrganizationId(1L)).thenReturn(List.of());
         ArgumentCaptor<BarStation> captor = ArgumentCaptor.forClass(BarStation.class);
         BarStation saved = BarStation.builder().id(3L).organizationId(1L).name("New").isActive(true).build();
         when(barStationRepository.save(any(BarStation.class))).thenReturn(saved);
@@ -120,7 +126,7 @@ class BarStationServiceTest {
         Long orgId = 1L; Long stationId = 10L; UUID uid = UUID.randomUUID();
         BarStation station = BarStation.builder().id(stationId).organizationId(orgId).name("Old").users(new HashSet<>()).build();
         when(barStationRepository.findByOrganizationIdAndId(orgId, stationId)).thenReturn(Optional.of(station));
-        when(barStationRepository.findByOrganizationId(orgId)).thenReturn(List.of(station));
+        lenient().when(barStationRepository.findByOrganizationId(orgId)).thenReturn(List.of(station));
         User user = new User(); user.setId(uid); user.setOrganizationId(orgId); user.setBarStations(new HashSet<>());
         when(userRepository.findById(uid)).thenReturn(Optional.of(user));
         when(barStationRepository.save(any(BarStation.class))).thenAnswer(a -> a.getArgument(0));
@@ -146,7 +152,7 @@ class BarStationServiceTest {
         User user = new User(); user.setId(uid); user.setOrganizationId(1L); user.setBarStations(new HashSet<>());
         BarStation st = BarStation.builder().id(1L).organizationId(1L).name("A").build();
         user.getBarStations().add(st);
-        when(userRepository.findById(uid)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdAndOrganizationId(uid, 1L)).thenReturn(Optional.of(user));
         when(barStationMapper.toResponseDtoList(anyList())).thenReturn(List.of(new BarStationResponseDto(1L, 1L, "A", null, true, List.of(), null, null)));
 
         List<BarStationResponseDto> res = barStationService.getUserStations(uid, 1L);

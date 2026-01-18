@@ -1,5 +1,6 @@
 package com.borsibaar.controller;
 
+import com.borsibaar.config.UserPrincipal;
 import com.borsibaar.dto.CategoryRequestDto;
 import com.borsibaar.dto.CategoryResponseDto;
 import com.borsibaar.entity.Role;
@@ -14,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -54,7 +56,7 @@ class CategoryControllerTest {
     @Test
     void createCategory_ReturnsCreated() throws Exception {
         User user = userWithOrg(1L, "ADMIN");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         CategoryRequestDto req = new CategoryRequestDto("Beers", true);
         CategoryResponseDto resp = new CategoryResponseDto(1L, "Beers", true);
@@ -73,7 +75,7 @@ class CategoryControllerTest {
     @Test
     void getAll_UsesUserOrg_WhenNoQueryParam() throws Exception {
         User user = userWithOrg(5L, "USER");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         when(categoryService.getAllByOrg(5L)).thenReturn(List.of());
         mockMvc.perform(get("/api/categories"))
@@ -85,7 +87,7 @@ class CategoryControllerTest {
     @Test
     void getById_ReturnsDto() throws Exception {
         User user = userWithOrg(2L, "USER");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         CategoryResponseDto resp = new CategoryResponseDto(10L, "Wine", true);
         when(categoryService.getByIdAndOrg(10L, 2L)).thenReturn(resp);
@@ -101,7 +103,7 @@ class CategoryControllerTest {
     @Test
     void delete_ReturnsNoContent() throws Exception {
         User user = userWithOrg(3L, "USER");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         mockMvc.perform(delete("/api/categories/7"))
                 .andExpect(status().isNoContent());
@@ -124,6 +126,21 @@ class CategoryControllerTest {
 
     private static void setAuth(User user) {
         Authentication auth = new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    /**
+     * Helper method to setup SecurityContext with a mock authenticated user.
+     */
+    private void setupSecurityContextWithUser(User user) {
+        UserPrincipal principal = new UserPrincipal(user);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+        );
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

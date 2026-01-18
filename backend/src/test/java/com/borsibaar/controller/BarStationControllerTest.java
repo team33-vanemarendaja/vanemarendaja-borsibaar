@@ -1,5 +1,6 @@
 package com.borsibaar.controller;
 
+import com.borsibaar.config.UserPrincipal;
 import com.borsibaar.dto.BarStationRequestDto;
 import com.borsibaar.dto.BarStationResponseDto;
 import com.borsibaar.dto.UserSummaryResponseDto;
@@ -17,7 +18,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,7 +33,9 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -223,14 +229,17 @@ class BarStationControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/bar-stations")
+
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("New Station"))
                 .andExpect(jsonPath("$.description").value("Test Description"))
                 .andExpect(jsonPath("$.isActive").value(true))
                 .andExpect(jsonPath("$.assignedUsers", hasSize(2)));
+
 
         // Verify service was called
         verify(barStationService).createStation(eq(1L), any(BarStationRequestDto.class));
@@ -540,10 +549,14 @@ class BarStationControllerTest {
      * Helper method to setup SecurityContext with a mock authenticated user.
      */
     private void setupSecurityContextWithUser(User user) {
+        UserPrincipal principal = new UserPrincipal(user);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+        );
         Authentication auth = new UsernamePasswordAuthenticationToken(
-                user,
+                principal,
                 null,
-                Collections.emptyList());
+                authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }
