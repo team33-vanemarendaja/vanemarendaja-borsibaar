@@ -6,7 +6,6 @@ import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
 import com.borsibaar.repository.RoleRepository;
 import com.borsibaar.repository.UserRepository;
-import com.borsibaar.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
