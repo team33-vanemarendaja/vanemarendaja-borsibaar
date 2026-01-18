@@ -19,8 +19,7 @@ public class AccountService {
     private final RoleRepository roleRepository;
 
     @Transactional(readOnly = true)
-    public MeResponseDto getCurrentUserSummary() {
-        User user = SecurityUtils.getCurrentUser(false);
+    public MeResponseDto getCurrentUserSummary(User user) {
         return new MeResponseDto(
                 user.getEmail(),
                 user.getName(),
@@ -31,8 +30,7 @@ public class AccountService {
     }
 
     @Transactional
-    public void completeOnboarding(OnboardingRequestDto req) {
-        User user = SecurityUtils.getCurrentUser(false);
+    public void completeOnboarding(OnboardingRequestDto req, User user) {
 
         // Allow users without organization (that's the point of onboarding)
         if (user.getOrganizationId() != null) {

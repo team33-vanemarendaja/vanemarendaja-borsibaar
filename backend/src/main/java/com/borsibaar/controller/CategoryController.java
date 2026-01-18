@@ -29,25 +29,35 @@ public class CategoryController {
     public List<CategoryResponseDto> getAll(@RequestParam(required = false) Long organizationId, @CurrentUser User user) {
         // If organizationId is provided, use it (for public access)
         // Otherwise, get from authenticated user
-        Long orgId;
-        if (organizationId != null) {
-            orgId = organizationId;
-        } else {
-            orgId = user.getOrganizationId();
+        try {
+            Long orgId;
+            if (organizationId != null) {
+                orgId = organizationId;
+            } else {
+                orgId = user.getOrganizationId();
+            }
+            return categoryService.getAllByOrg(orgId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return categoryService.getAllByOrg(orgId);
+
     }
 
     @GetMapping("/{id}")
-    //@IsOnboardedAdmin
+    // @IsOnboardedAdmin
     // TODO: If user has no organization can he see cateogry?
     public CategoryResponseDto getById(@PathVariable Long id, @CurrentUser User user) {
-        return categoryService.getByIdAndOrg(id, user.getOrganizationId());
+        try {
+            return categoryService.getByIdAndOrg(id, user.getOrganizationId());
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @DeleteMapping({ "/{id}" })
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    //@IsOnboardedAdmin
+    // @IsOnboardedAdmin
     // TODO: Can user without admin role delete a resource
     public void delete(@PathVariable Long id, @CurrentUser User user) {
         categoryService.deleteReturningDto(id, user.getOrganizationId());

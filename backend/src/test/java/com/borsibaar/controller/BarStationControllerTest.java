@@ -1,6 +1,5 @@
 package com.borsibaar.controller;
 
-import com.borsibaar.config.UserPrincipal;
 import com.borsibaar.dto.BarStationRequestDto;
 import com.borsibaar.dto.BarStationResponseDto;
 import com.borsibaar.dto.UserSummaryResponseDto;
@@ -8,6 +7,7 @@ import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
 import com.borsibaar.exception.DuplicateResourceException;
 import com.borsibaar.exception.NotFoundException;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.service.BarStationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -19,9 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;

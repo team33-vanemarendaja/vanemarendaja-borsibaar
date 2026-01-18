@@ -1,10 +1,10 @@
 package com.borsibaar.controller;
 
-import com.borsibaar.config.UserPrincipal;
 import com.borsibaar.dto.UserSummaryResponseDto;
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
 import com.borsibaar.mapper.UserMapper;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -13,14 +13,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 

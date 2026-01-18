@@ -1,4 +1,4 @@
-package com.borsibaar.config;
+package com.borsibaar.principal;
 
 import com.borsibaar.entity.User;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,6 +14,10 @@ public record UserPrincipal(User user) implements UserDetails {
         return List.of(
                 new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
         );
+    }
+
+    public Long getOrganizationId() {
+        return user.getOrganizationId();
     }
 
     @Override

@@ -46,14 +46,19 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public List<CategoryResponseDto> getAllByOrg(Long organizationId) {
-        Iterable<Category> categories = categoryRepository.findAllByOrganizationId(organizationId);
+        try {
+            Iterable<Category> categories = categoryRepository.findAllByOrganizationId(organizationId);
 
-        List<CategoryResponseDto> responseDtos = new ArrayList<>();
-        for (Category category : categories) {
-            responseDtos.add(categoryMapper.toResponse(category));
+            List<CategoryResponseDto> responseDtos = new ArrayList<>();
+            for (Category category : categories) {
+                responseDtos.add(categoryMapper.toResponse(category));
+            }
+
+            return responseDtos;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
-        return responseDtos;
     }
 
     @Transactional(readOnly = true)

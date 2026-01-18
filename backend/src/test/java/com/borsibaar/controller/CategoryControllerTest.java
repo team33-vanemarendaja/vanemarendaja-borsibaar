@@ -1,10 +1,10 @@
 package com.borsibaar.controller;
 
-import com.borsibaar.config.UserPrincipal;
 import com.borsibaar.dto.CategoryRequestDto;
 import com.borsibaar.dto.CategoryResponseDto;
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.service.CategoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
