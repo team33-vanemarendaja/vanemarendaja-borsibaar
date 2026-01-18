@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -147,4 +148,12 @@ public class ApiExceptionHandler {
                 "You do not have permission to access this resource.",
                 request.getRequestURI());
     }
+
+        @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
+        public ProblemDetail handleAuthenticationError(AuthenticationCredentialsNotFoundException ex) {
+                return  ProblemDetail.forStatusAndDetail(
+                        HttpStatus.UNAUTHORIZED,
+                        "Authentication is required to access this resource"
+                );
+        }
 }
