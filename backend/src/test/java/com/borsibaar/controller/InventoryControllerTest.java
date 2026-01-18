@@ -3,6 +3,7 @@ package com.borsibaar.controller;
 import com.borsibaar.dto.*;
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.service.InventoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -55,7 +57,7 @@ class InventoryControllerTest {
         @Test
         void getOrganizationInventory_UsesUserOrg_WhenNoQueryParam() throws Exception {
                 User user = userWithOrg(42L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
 
                 when(inventoryService.getByOrganization(42L, null)).thenReturn(List.of());
                 mockMvc.perform(get("/api/inventory"))
@@ -67,7 +69,7 @@ class InventoryControllerTest {
         @Test
         void addStock_ReturnsCreated() throws Exception {
                 User user = userWithOrg(1L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
 
                 AddStockRequestDto req = new AddStockRequestDto(10L, new BigDecimal("5"), "note");
                 InventoryResponseDto resp = new InventoryResponseDto(
@@ -112,7 +114,7 @@ class InventoryControllerTest {
         @Test
         void getProductInventory_DelegatesToService() throws Exception {
                 User user = userWithOrg(5L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
                 when(inventoryService.getByProductAndOrganization(10L, 5L)).thenReturn(
                                 new InventoryResponseDto(1L, 5L, 10L, "Water", BigDecimal.TEN, BigDecimal.ONE, "abc",
                                                 BigDecimal.ONE, null, null, OffsetDateTime.now().toString()));
@@ -127,7 +129,7 @@ class InventoryControllerTest {
         @Test
         void removeStock_ReturnsOk() throws Exception {
                 User user = userWithOrg(2L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
                 RemoveStockRequestDto req = new RemoveStockRequestDto(20L, new BigDecimal("3"), "ref1", "note");
                 when(inventoryService.removeStock(any(RemoveStockRequestDto.class), any(UUID.class), eq(2L)))
                                 .thenReturn(
@@ -147,7 +149,7 @@ class InventoryControllerTest {
         @Test
         void adjustStock_ReturnsOk() throws Exception {
                 User user = userWithOrg(3L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
                 AdjustStockRequestDto req = new AdjustStockRequestDto(30L, new BigDecimal("12"), "audit");
                 when(inventoryService.adjustStock(any(AdjustStockRequestDto.class), any(UUID.class), eq(3L)))
                                 .thenReturn(
@@ -167,7 +169,7 @@ class InventoryControllerTest {
         @Test
         void getTransactionHistory_ReturnsList() throws Exception {
                 User user = userWithOrg(4L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
                 when(inventoryService.getTransactionHistory(40L, 4L)).thenReturn(List.of(
                                 new InventoryTransactionResponseDto(1L, 99L, "SALE", BigDecimal.ONE.negate(),
                                                 BigDecimal.TEN, new BigDecimal("9"), BigDecimal.TEN, BigDecimal.TEN,
@@ -184,7 +186,7 @@ class InventoryControllerTest {
         @Test
         void getUserSalesStats_ReturnsList() throws Exception {
                 User user = userWithOrg(6L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
                 when(inventoryService.getUserSalesStats(6L)).thenReturn(List.of(
                                 new UserSalesStatsResponseDto(UUID.randomUUID().toString(), "U", "u@x", 2L,
                                                 new BigDecimal("12.00"), 1L, "S")));
@@ -199,7 +201,7 @@ class InventoryControllerTest {
         @Test
         void getStationSalesStats_ReturnsList() throws Exception {
                 User user = userWithOrg(7L, "USER");
-                setAuth(user);
+                setupSecurityContextWithUser(user);
                 when(inventoryService.getStationSalesStats(7L)).thenReturn(List.of(
                                 new StationSalesStatsResponseDto(1L, "Main", 3L, new BigDecimal("30.00"))));
 
@@ -221,8 +223,18 @@ class InventoryControllerTest {
                                 .build();
         }
 
-        private static void setAuth(User user) {
-                Authentication auth = new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+        /**
+         * Helper method to setup SecurityContext with a mock authenticated user.
+         */
+        private void setupSecurityContextWithUser(User user) {
+                UserPrincipal principal = new UserPrincipal(user);
+                List<SimpleGrantedAuthority> authorities = List.of(
+                        new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+                );
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        principal,
+                        null,
+                        authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
         }
 }
