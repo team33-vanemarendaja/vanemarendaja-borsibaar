@@ -8,46 +8,43 @@ import com.borsibaar.exception.DuplicateResourceException;
 import com.borsibaar.exception.NotFoundException;
 import com.borsibaar.mapper.CategoryMapper;
 import com.borsibaar.repository.CategoryRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
-    public CategoryService(CategoryRepository categoryRepository, CategoryMapper categoryMapper) {
-        this.categoryRepository = categoryRepository;
-        this.categoryMapper = categoryMapper;
-    }
-
     @Transactional
     public CategoryResponseDto create(CategoryRequestDto request, Long organizationId) {
-        Category category = categoryMapper.toEntity(request);
-
-        category.setOrganizationId(organizationId);
-
-        String normalizedName = request.name() == null ? null : request.name().trim();
-        if (normalizedName == null || normalizedName.isEmpty()) {
-            throw new BadRequestException("Category name must not be blank");
-        }
-        category.setName(normalizedName);
-
-        boolean dynamicPricing = request.dynamicPricing() != null ? request.dynamicPricing() : true;
-        category.setDynamicPricing(dynamicPricing);
+        String normalizedName = Optional.ofNullable(request.name())
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .orElseThrow(() -> new BadRequestException("Category name must not be blank"));
 
         if (categoryRepository.existsByOrganizationIdAndNameIgnoreCase(organizationId, normalizedName)) {
             throw new DuplicateResourceException("Category '" + normalizedName + "' already exists");
         }
 
-        Category saved = categoryRepository.save(category);
-        return categoryMapper.toResponse(saved);
+        Category category = categoryMapper.toEntity(request);
+        category.setOrganizationId(organizationId);
+        category.setName(normalizedName);
+
+        if (request.dynamicPricing() == null) {
+            category.setDynamicPricing(true);
+        }
+
+        return categoryMapper.toResponse(categoryRepository.save(category));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CategoryResponseDto> getAllByOrg(Long organizationId) {
         Iterable<Category> categories = categoryRepository.findAllByOrganizationId(organizationId);
 
@@ -59,25 +56,20 @@ public class CategoryService {
         return responseDtos;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public CategoryResponseDto getByIdAndOrg(Long id, Long organizationId) {
         return categoryRepository.findByIdAndOrganizationId(id, organizationId)
-                .map(category -> {
-                    CategoryResponseDto dto = categoryMapper.toResponse(category);
-                    categoryRepository.findById(id);
-                    return dto;
-                })
+                .map(categoryMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Category not found: " + id));
     }
 
     @Transactional
     public CategoryResponseDto deleteReturningDto(Long id, Long organizationId) {
-        return categoryRepository.findByIdAndOrganizationId(id, organizationId)
-                .map(category -> {
-                    CategoryResponseDto dto = categoryMapper.toResponse(category);
-                    categoryRepository.delete(category);
-                    return dto;
-                })
-                .orElseThrow(() -> new NotFoundException("Category not found: " + id));
+        Category category = categoryRepository.findByIdAndOrganizationId(id, organizationId)
+                .orElseThrow(() -> new NotFoundException("Category not found with id: " + id));
+
+        CategoryResponseDto dto = categoryMapper.toResponse(category);
+        categoryRepository.delete(category);
+        return dto;
     }
 }

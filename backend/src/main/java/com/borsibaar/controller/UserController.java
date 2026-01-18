@@ -1,10 +1,10 @@
 package com.borsibaar.controller;
 
+import com.borsibaar.annotation.CurrentUser;
 import com.borsibaar.dto.UserSummaryResponseDto;
 import com.borsibaar.entity.User;
 import com.borsibaar.mapper.UserMapper;
 import com.borsibaar.repository.UserRepository;
-import com.borsibaar.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,9 +24,8 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserSummaryResponseDto>> getOrganizationUsers() {
+    public ResponseEntity<List<UserSummaryResponseDto>> getOrganizationUsers(@CurrentUser User currentUser) {
         // Get authenticated user from SecurityContext (set by JwtAuthenticationFilter)
-        User currentUser = SecurityUtils.getCurrentUser();
 
         List<UserSummaryResponseDto> users = userRepository.findByOrganizationId(currentUser.getOrganizationId())
                 .stream()
