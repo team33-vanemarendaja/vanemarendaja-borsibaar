@@ -1,5 +1,6 @@
 package com.borsibaar.service;
 
+import com.borsibaar.dto.AuthResultDto;
 import com.borsibaar.dto.UserDTO;
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
@@ -63,7 +64,7 @@ class AuthServiceTest {
             return new UserDTO(u.getEmail(), u.getName(), u.getRole().getName(), "jwt-token");
         });
 
-        AuthService.AuthResult result = authService.processOAuthLogin(token);
+        AuthResultDto result = authService.processOAuthLogin(token);
 
         assertNotNull(result);
         assertEquals("new@test.com", result.dto().email());
@@ -93,7 +94,7 @@ class AuthServiceTest {
                 "email");
         OAuth2AuthenticationToken token = new OAuth2AuthenticationToken(principal, principal.getAuthorities(), "google");
 
-        AuthService.AuthResult result = authService.processOAuthLogin(token);
+        AuthResultDto result = authService.processOAuthLogin(token);
 
         assertEquals("exist@test.com", result.dto().email());
         assertEquals("Updated Name", result.dto().name());

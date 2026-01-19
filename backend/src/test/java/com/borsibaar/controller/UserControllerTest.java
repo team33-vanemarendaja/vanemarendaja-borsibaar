@@ -4,6 +4,7 @@ import com.borsibaar.dto.UserSummaryResponseDto;
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
 import com.borsibaar.mapper.UserMapper;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -11,19 +12,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -134,10 +136,14 @@ class UserControllerTest {
      * @param user The user to set as authenticated principal
      */
     private void setupSecurityContextWithUser(User user) {
+        UserPrincipal principal = new UserPrincipal(user);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+        );
         Authentication auth = new UsernamePasswordAuthenticationToken(
-                user,
+                principal,
                 null,
-                Collections.emptyList());
+                principal.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

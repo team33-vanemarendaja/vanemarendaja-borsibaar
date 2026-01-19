@@ -65,13 +65,13 @@ class CategoryServiceTest {
     @Test
     void create_BlankName_ThrowsBadRequest() {
         CategoryRequestDto bad = new CategoryRequestDto("   ", null);
-        when(categoryMapper.toEntity(bad)).thenReturn(new Category());
+        lenient().when(categoryMapper.toEntity(bad)).thenReturn(new Category());
         assertThrows(BadRequestException.class, () -> categoryService.create(bad, 1L));
     }
 
     @Test
     void create_Duplicate_ThrowsDuplicateResource() {
-        when(categoryMapper.toEntity(request)).thenReturn(new Category());
+        lenient().when(categoryMapper.toEntity(request)).thenReturn(new Category());
         when(categoryRepository.existsByOrganizationIdAndNameIgnoreCase(1L, "Drinks")).thenReturn(true);
         assertThrows(DuplicateResourceException.class, () -> categoryService.create(request, 1L));
     }

@@ -6,6 +6,7 @@ import com.borsibaar.dto.SaleRequestDto;
 import com.borsibaar.dto.SaleResponseDto;
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.service.SalesService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -58,7 +60,7 @@ class SalesControllerTest {
     @Test
     void processSale_ReturnsCreatedResponse() throws Exception {
         User user = userWithOrg(1L, "USER");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         SaleRequestDto req = new SaleRequestDto(List.of(new SaleItemRequestDto(10L, new BigDecimal("2"))), "note", 5L);
         SaleItemResponseDto itemResp = new SaleItemResponseDto(10L, "Cola", new BigDecimal("2"), new BigDecimal("3.00"), new BigDecimal("6.00"));
@@ -89,8 +91,15 @@ class SalesControllerTest {
         return user;
     }
 
-    private static void setAuth(User user) {
-        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+    private void setupSecurityContextWithUser(User user) {
+        UserPrincipal principal = new UserPrincipal(user);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+        );
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

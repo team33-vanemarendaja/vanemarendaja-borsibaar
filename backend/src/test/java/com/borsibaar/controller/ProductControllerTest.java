@@ -4,6 +4,7 @@ import com.borsibaar.dto.ProductRequestDto;
 import com.borsibaar.dto.ProductResponseDto;
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -182,6 +185,8 @@ class ProductControllerTest {
 
     @Test
     void testGetProduct_Success() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
         // Arrange: Create expected response
         ProductResponseDto response = new ProductResponseDto(
                 1L,
@@ -214,6 +219,9 @@ class ProductControllerTest {
 
     @Test
     void testGetProduct_NotFound() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
+
         // Arrange: Mock service to throw not found exception
         when(productService.getById(999L))
                 .thenThrow(new ResponseStatusException(
@@ -230,6 +238,9 @@ class ProductControllerTest {
 
     @Test
     void testDeleteProduct_Success() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
+
         // Act & Assert: DELETE returns 204 No Content
         mockMvc.perform(delete("/api/products/1"))
                 .andExpect(status().isNoContent());
@@ -240,6 +251,9 @@ class ProductControllerTest {
 
     @Test
     void testDeleteProduct_NotFound() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
+
         // Arrange: Mock service to throw not found exception
         org.mockito.Mockito.doThrow(new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
@@ -276,10 +290,14 @@ class ProductControllerTest {
      * Helper method to setup SecurityContext with a mock authenticated user.
      */
     private void setupSecurityContextWithUser(User user) {
+        UserPrincipal principal = new UserPrincipal(user);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+        );
         Authentication auth = new UsernamePasswordAuthenticationToken(
-                user,
+                principal,
                 null,
-                Collections.emptyList());
+                authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

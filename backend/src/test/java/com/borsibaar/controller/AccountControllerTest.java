@@ -2,6 +2,7 @@ package com.borsibaar.controller;
 
 import com.borsibaar.entity.Role;
 import com.borsibaar.entity.User;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.repository.RoleRepository;
 import com.borsibaar.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -12,12 +13,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -53,7 +56,7 @@ class AccountControllerTest {
     @Test
     void getMe_WithNoOrganization_ReturnsNeedsOnboarding() throws Exception {
         User user = userWithOrgAndRole(null, "USER");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         mockMvc.perform(get("/api/account"))
                 .andExpect(status().isOk())
@@ -69,7 +72,7 @@ class AccountControllerTest {
     @Test
     void onboarding_WithValidPayload_SetsOrganizationAndReturns204() throws Exception {
         User user = userWithOrgAndRole(null, "USER");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         Role adminRole = Role.builder().id(1L).name("ADMIN").build();
         when(roleRepository.findByName("ADMIN")).thenReturn(Optional.of(adminRole));
@@ -87,7 +90,7 @@ class AccountControllerTest {
     @Test
     void onboarding_WithInvalidPayload_ReturnsBadRequest() throws Exception {
         User user = userWithOrgAndRole(null, "USER");
-        setAuth(user);
+        setupSecurityContextWithUser(user);
 
         String payload = "{\"organizationId\":1,\"acceptTerms\":false}"; // terms not accepted
 
@@ -110,8 +113,18 @@ class AccountControllerTest {
                 .build();
     }
 
-    private static void setAuth(User user) {
-        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+    /**
+     * Helper method to setup SecurityContext with a mock authenticated user.
+     */
+    private void setupSecurityContextWithUser(User user) {
+        UserPrincipal principal = new UserPrincipal(user);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+        );
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

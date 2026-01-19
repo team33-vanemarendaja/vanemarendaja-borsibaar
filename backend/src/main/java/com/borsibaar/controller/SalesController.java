@@ -1,10 +1,11 @@
 package com.borsibaar.controller;
 
+import com.borsibaar.annotation.CurrentUser;
+import com.borsibaar.annotation.IsAuthenticated;
 import com.borsibaar.dto.SaleRequestDto;
 import com.borsibaar.dto.SaleResponseDto;
 import com.borsibaar.entity.User;
 import com.borsibaar.service.SalesService;
-import com.borsibaar.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,8 +20,8 @@ public class SalesController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SaleResponseDto processSale(@RequestBody @Valid SaleRequestDto request) {
-        User user = SecurityUtils.getCurrentUser();
+    @IsAuthenticated
+    public SaleResponseDto processSale(@RequestBody @Valid SaleRequestDto request, @CurrentUser User user) {
         return salesService.processSale(request, user.getId(), user.getOrganizationId());
     }
 }

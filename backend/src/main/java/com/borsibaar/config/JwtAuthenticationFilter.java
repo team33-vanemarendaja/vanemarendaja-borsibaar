@@ -1,6 +1,7 @@
 package com.borsibaar.config;
 
 import com.borsibaar.entity.User;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.repository.UserRepository;
 import com.borsibaar.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -75,9 +76,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (userOptional.isPresent()) {
                     User user = userOptional.get();
+                    UserPrincipal principal = new UserPrincipal(user);
                     // Create authentication token with user details and role
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            user, // Principal - the authenticated user
+                            principal, // Principal - the authenticated user
                             null, // Credentials - not needed after authentication
                             user.getRole() != null
                                     ? Collections.singletonList(
