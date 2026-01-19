@@ -2,6 +2,9 @@ package com.borsibaar.controller;
 
 import com.borsibaar.dto.OrganizationRequestDto;
 import com.borsibaar.dto.OrganizationResponseDto;
+import com.borsibaar.entity.Role;
+import com.borsibaar.entity.User;
+import com.borsibaar.principal.UserPrincipal;
 import com.borsibaar.service.OrganizationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -9,6 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -16,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +50,9 @@ class OrganizationControllerTest {
 
     @Test
     void create_ReturnsCreated() throws Exception {
+        User user = userWithOrg(3L, "USER");
+        setupSecurityContextWithUser(user);
+
         OrganizationRequestDto req = new OrganizationRequestDto("Org", BigDecimal.valueOf(0.5), BigDecimal.valueOf(0.5));
         OrganizationResponseDto resp = new OrganizationResponseDto(1L, "Org", OffsetDateTime.now(), OffsetDateTime.now(), BigDecimal.valueOf(0.5), BigDecimal.valueOf(0.5));
         when(organizationService.create(any(OrganizationRequestDto.class))).thenReturn(resp);
@@ -58,6 +69,9 @@ class OrganizationControllerTest {
 
     @Test
     void get_ReturnsDto() throws Exception {
+        User user = userWithOrg(3L, "USER");
+        setupSecurityContextWithUser(user);
+
         OrganizationResponseDto resp = new OrganizationResponseDto(2L, "Org2", OffsetDateTime.now(), OffsetDateTime.now(), BigDecimal.valueOf(0.5), BigDecimal.valueOf(0.5));
         when(organizationService.getById(2L)).thenReturn(resp);
 
@@ -71,6 +85,9 @@ class OrganizationControllerTest {
 
     @Test
     void getAll_ReturnsList() throws Exception {
+        User user = userWithOrg(3L, "USER");
+        setupSecurityContextWithUser(user);
+
         OrganizationResponseDto resp1 = new OrganizationResponseDto(1L, "A", OffsetDateTime.now(), OffsetDateTime.now(), BigDecimal.valueOf(0.5), BigDecimal.valueOf(0.5));
         OrganizationResponseDto resp2 = new OrganizationResponseDto(2L, "B", OffsetDateTime.now(), OffsetDateTime.now(), BigDecimal.valueOf(0.5), BigDecimal.valueOf(0.5));
         when(organizationService.getAll()).thenReturn(List.of(resp1, resp2));
@@ -84,6 +101,9 @@ class OrganizationControllerTest {
 
     @Test
     void update_ReturnsUpdatedDto() throws Exception {
+        User user = userWithOrg(3L, "USER");
+        setupSecurityContextWithUser(user);
+
         OrganizationRequestDto req = new OrganizationRequestDto(
                 "Updated Org",
                 BigDecimal.valueOf(1.0),
@@ -109,5 +129,31 @@ class OrganizationControllerTest {
                 .andExpect(jsonPath("$.priceDecreaseStep").value(0.25));
 
         verify(organizationService).update(5L, req);
+    }
+
+    private static User userWithOrg(Long orgId, String roleName) {
+        Role role = Role.builder().id(1L).name(roleName).build();
+        return User.builder()
+                .id(UUID.randomUUID())
+                .email("user@test.com")
+                .name("Test User")
+                .organizationId(orgId)
+                .role(role)
+                .build();
+    }
+
+    /**
+     * Helper method to setup SecurityContext with a mock authenticated user.
+     */
+    private void setupSecurityContextWithUser(User user) {
+        UserPrincipal principal = new UserPrincipal(user);
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().getName())
+        );
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                authorities);
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

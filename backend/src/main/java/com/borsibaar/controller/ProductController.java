@@ -1,6 +1,7 @@
 package com.borsibaar.controller;
 
 import com.borsibaar.annotation.CurrentUser;
+import com.borsibaar.annotation.IsAuthenticated;
 import com.borsibaar.annotation.IsOnboardedAdmin;
 import com.borsibaar.dto.ProductRequestDto;
 import com.borsibaar.dto.ProductResponseDto;
@@ -20,17 +21,20 @@ public class ProductController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @IsAuthenticated
     public ProductResponseDto create(@RequestBody @Valid ProductRequestDto request, @CurrentUser User user) {
         return productService.create(request, user.getOrganizationId());
     }
 
     @GetMapping("/{id}")
+    @IsAuthenticated
     public ProductResponseDto get(@PathVariable Long id) {
         return productService.getById(id);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @IsAuthenticated
     public void delete(@PathVariable Long id) {
         productService.delete(id);
     }

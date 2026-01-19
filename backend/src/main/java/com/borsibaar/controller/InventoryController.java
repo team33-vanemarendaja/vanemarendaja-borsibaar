@@ -1,7 +1,7 @@
 package com.borsibaar.controller;
 
 import com.borsibaar.annotation.CurrentUser;
-import com.borsibaar.annotation.IsOnboardedAdmin;
+import com.borsibaar.annotation.IsAuthenticated;
 import com.borsibaar.dto.*;
 import com.borsibaar.entity.User;
 import com.borsibaar.service.InventoryService;
@@ -20,6 +20,7 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping
+    @IsAuthenticated
     public List<InventoryResponseDto> getOrganizationInventory(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long organizationId,
@@ -37,12 +38,14 @@ public class InventoryController {
     }
 
     @GetMapping("/product/{productId}")
+    @IsAuthenticated
     public InventoryResponseDto getProductInventory(@PathVariable Long productId, @CurrentUser User user) {
         return inventoryService.getByProductAndOrganization(productId, user.getOrganizationId());
     }
 
     @PostMapping("/add")
     @ResponseStatus(HttpStatus.CREATED)
+    @IsAuthenticated
     public InventoryResponseDto addStock(@RequestBody @Valid AddStockRequestDto request, @CurrentUser User user) {
         System.out.println("Received request: " + request); // DEBUG
         System.out.println("ProductId: " + request.productId()); // DEBUG
@@ -51,26 +54,31 @@ public class InventoryController {
         return inventoryService.addStock(request, user.getId(), user.getOrganizationId());
     }
 
+    @IsAuthenticated
     @PostMapping("/remove")
     public InventoryResponseDto removeStock(@RequestBody @Valid RemoveStockRequestDto request, @CurrentUser User user) {
         return inventoryService.removeStock(request, user.getId(), user.getOrganizationId());
     }
 
+    @IsAuthenticated
     @PostMapping("/adjust")
     public InventoryResponseDto adjustStock(@RequestBody @Valid AdjustStockRequestDto request, @CurrentUser User user) {
         return inventoryService.adjustStock(request, user.getId(), user.getOrganizationId());
     }
 
+    @IsAuthenticated
     @GetMapping("/product/{productId}/history")
     public List<InventoryTransactionResponseDto> getTransactionHistory(@PathVariable Long productId, @CurrentUser User user) {
         return inventoryService.getTransactionHistory(productId, user.getOrganizationId());
     }
 
+    @IsAuthenticated
     @GetMapping("/sales-stats")
     public List<UserSalesStatsResponseDto> getUserSalesStats(@CurrentUser User user) {
         return inventoryService.getUserSalesStats(user.getOrganizationId());
     }
 
+    @IsAuthenticated
     @GetMapping("/station-sales-stats")
     public List<StationSalesStatsResponseDto> getStationSalesStats(@CurrentUser User user) {
         return inventoryService.getStationSalesStats(user.getOrganizationId());

@@ -124,10 +124,6 @@ class CategoryControllerTest {
         return user;
     }
 
-    private static void setAuth(User user) {
-        Authentication auth = new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-    }
 
     /**
      * Helper method to setup SecurityContext with a mock authenticated user.

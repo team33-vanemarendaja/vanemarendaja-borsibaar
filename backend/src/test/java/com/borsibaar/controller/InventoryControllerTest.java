@@ -99,6 +99,9 @@ class InventoryControllerTest {
 
         @Test
         void getOrganizationInventory_UsesQueryParams_WhenProvided() throws Exception {
+                User user = userWithOrg(1L, "USER");
+                setupSecurityContextWithUser(user);
+
                 when(inventoryService.getByOrganization(99L, 7L)).thenReturn(List.of(
                                 new InventoryResponseDto(1L, 99L, 10L, "Cola", BigDecimal.ONE, BigDecimal.TEN, "abc",
                                                 BigDecimal.TEN, null, null, OffsetDateTime.now().toString())));

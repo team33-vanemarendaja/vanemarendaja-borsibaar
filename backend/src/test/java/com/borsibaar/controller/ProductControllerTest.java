@@ -185,6 +185,8 @@ class ProductControllerTest {
 
     @Test
     void testGetProduct_Success() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
         // Arrange: Create expected response
         ProductResponseDto response = new ProductResponseDto(
                 1L,
@@ -217,6 +219,9 @@ class ProductControllerTest {
 
     @Test
     void testGetProduct_NotFound() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
+
         // Arrange: Mock service to throw not found exception
         when(productService.getById(999L))
                 .thenThrow(new ResponseStatusException(
@@ -233,6 +238,9 @@ class ProductControllerTest {
 
     @Test
     void testDeleteProduct_Success() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
+
         // Act & Assert: DELETE returns 204 No Content
         mockMvc.perform(delete("/api/products/1"))
                 .andExpect(status().isNoContent());
@@ -243,6 +251,9 @@ class ProductControllerTest {
 
     @Test
     void testDeleteProduct_NotFound() throws Exception {
+        User user = createMockUser(1L);
+        setupSecurityContextWithUser(user);
+
         // Arrange: Mock service to throw not found exception
         org.mockito.Mockito.doThrow(new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
